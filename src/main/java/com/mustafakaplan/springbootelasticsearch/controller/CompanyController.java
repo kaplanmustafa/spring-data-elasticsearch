@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static org.elasticsearch.index.query.QueryBuilders.matchPhraseQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 
 @RestController
@@ -69,6 +70,16 @@ public class CompanyController {
                         .operator(Operator.AND)
                         .fuzziness(Fuzziness.ONE) // Fuziness.ONE ile arama eşleme işleminin bir harf değiştirerek de denenmesi belirtilmektedir.
                         .prefixLength(2)) // prefixLength(2) ile kelimelerin ilk iki harfinde bir değişikliklik yapılmaması belirtilmekte ve böylelikle kombinasyon sayısı azaltılmaktadır.
+                .build();
+
+        return elasticsearchOperations.search(searchQuery, Company.class, IndexCoordinates.of(INDEX_NAME)).getSearchHits();
+    }
+
+    //    Phrase Search
+    @GetMapping("/phrase-search")
+    List<SearchHit<Company>> getCompaniesByPhraseDescription(@RequestParam("search") String searchTerm) {
+        final NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
+                .withQuery(matchPhraseQuery("description", searchTerm).slop(2)) // slop ile bir terimin kaç kere taşınacağı belirtilebilir.
                 .build();
 
         return elasticsearchOperations.search(searchQuery, Company.class, IndexCoordinates.of(INDEX_NAME)).getSearchHits();
