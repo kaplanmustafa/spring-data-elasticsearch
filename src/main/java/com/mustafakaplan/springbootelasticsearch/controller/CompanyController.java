@@ -2,6 +2,8 @@ package com.mustafakaplan.springbootelasticsearch.controller;
 
 import com.mustafakaplan.springbootelasticsearch.dao.CompanyRepository;
 import com.mustafakaplan.springbootelasticsearch.model.Company;
+import org.elasticsearch.common.unit.Fuzziness;
+import org.elasticsearch.index.query.Operator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -44,6 +46,29 @@ public class CompanyController {
     List<SearchHit<Company>> getCompaniesByDescription(@RequestParam("search") String searchTerm) {
         final NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
                 .withQuery(matchQuery("description", searchTerm))
+                .build();
+
+        return elasticsearchOperations.search(searchQuery, Company.class, IndexCoordinates.of(INDEX_NAME)).getSearchHits();
+    }
+
+    //    Full-text Search
+    @GetMapping("/full-search")
+    List<SearchHit<Company>> getCompaniesByFullDescription(@RequestParam("search") String searchTerm) {
+        final NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
+                .withQuery(matchQuery("description", searchTerm).operator(Operator.AND))
+                .build();
+
+        return elasticsearchOperations.search(searchQuery, Company.class, IndexCoordinates.of(INDEX_NAME)).getSearchHits();
+    }
+
+    //    Fuziness
+    @GetMapping("/fuzzy-search")
+    List<SearchHit<Company>> getCompaniesByFuzzyDescription(@RequestParam("search") String searchTerm) {
+        final NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
+                .withQuery(matchQuery("description", searchTerm)
+                        .operator(Operator.AND)
+                        .fuzziness(Fuzziness.ONE) // Fuziness.ONE ile arama eşleme işleminin bir harf değiştirerek de denenmesi belirtilmektedir.
+                        .prefixLength(2)) // prefixLength(2) ile kelimelerin ilk iki harfinde bir değişikliklik yapılmaması belirtilmekte ve böylelikle kombinasyon sayısı azaltılmaktadır.
                 .build();
 
         return elasticsearchOperations.search(searchQuery, Company.class, IndexCoordinates.of(INDEX_NAME)).getSearchHits();
