@@ -84,4 +84,9 @@ public class CompanyController {
 
         return elasticsearchOperations.search(searchQuery, Company.class, IndexCoordinates.of(INDEX_NAME)).getSearchHits();
     }
+
+    @GetMapping("/repo-search")
+    List<SearchHit<Company>> getCompaniesByRepoDescription(@RequestParam("search") String searchTerm) {
+        return companyRepository.searchByDescription(searchTerm).getSearchHits();
+    }
 }
